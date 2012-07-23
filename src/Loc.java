@@ -13,16 +13,20 @@ class Loc {
     private Context ctx = null;
     private LocationManager lm = null;
     private Location loc = null;
+    private Ator a = null;
+    private ArrayList<Listener> sensors = new ArrayList<Listener>();
 
-    public Loc(Context c) {
+    public Loc(Context c, Ator a_) {
 	ctx = c;
+	a = a_;
 	lm = (LocationManager)ctx.getSystemService(Context.LOCATION_SERVICE);
 	Iterator i = lm.getAllProviders().iterator();
 	while(i.hasNext()) {
 	    String provider = (String)i.next();
 	    if(provider != "passive") {
 		evalLoc(lm.getLastKnownLocation(provider));
-		lm.requestLocationUpdates(provider,0,0,new Listener());
+		sensors.add(new Listener(provider));
+		lm.requestLocationUpdates(provider,0,0,sensors.get(sensors.size()-1));
 	    }
 	}
     }
@@ -30,9 +34,7 @@ class Loc {
     public Location ation(){return loc;}
 
     public void evalLoc(Location l) {
-	if(loc == null){
-	    loc = l;
-	    return;}
+	if(loc == null){loc = l; return;}
 
 	Float dr = loc.distanceTo(l);
 	Long dt = l.getTime() - loc.getTime();
@@ -43,21 +45,21 @@ class Loc {
 	   (dt > 120000 && da < 5) ||
 	   (dr > 2)) {
 	    loc = l;
-	    refined(l);
-	} else dismissed(l);
-    }
-
-    public void refined(Location l){
-	Log.d("Loc.ation", "Using new location from " + l.getProvider());
-    }
-    public void dismissed(Location l){
-	Log.d("Loc.ation", "Dismissed location from " + l.getProvider());
+	    a.refined(l);
+	} else a.dismissed(l);
     }
 
     class Listener implements LocationListener {
+	private String provider = "";
+	public Listener(String p){provider = p;}
 	public void onLocationChanged(Location l){evalLoc(l);}
 	public void onStatusChanged(String p,int s,Bundle e){}
 	public void onProviderEnabled(String p) {}
 	public void onProviderDisabled(String p) {}
+    }
+
+    public interface Ator {
+	public void refined(Location l);
+	public void dismissed(Location l);
     }
 }

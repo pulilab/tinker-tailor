@@ -31,6 +31,13 @@ class Loc {
 	}
     }
 
+    public void finalize() { close(); }
+
+    public void close() {
+	Iterator i = sensors.iterator();
+	while(i.hasNext()) { lm.removeUpdates((Listener)i.next()); }
+    }
+
     public Location ation(){return loc;}
 
     public void evalLoc(Location l) {
